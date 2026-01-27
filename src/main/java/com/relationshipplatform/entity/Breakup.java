@@ -1,32 +1,37 @@
 package com.relationshipplatform.entity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "relationship_health")
-public class RelationshipHealth {
+@Table(name = "breakups")
+public class Breakup {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String breakupId;
+
     @OneToOne
     @JoinColumn(name = "couple_id")
     private Couple couple;
 
-    private Integer healthScore;
+    @ManyToOne
+    @JoinColumn(name = "initiated_by")
+    private User initiatedBy;
 
-    private Integer loyaltyScore;
+    private LocalDate breakupDate;
 
-    private LocalDateTime lastUpdated;
+    private boolean patchupAllowed;
 }

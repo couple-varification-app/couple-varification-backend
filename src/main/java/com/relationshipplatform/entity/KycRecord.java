@@ -1,32 +1,33 @@
 package com.relationshipplatform.entity;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "relationship_health")
-public class RelationshipHealth {
+@Table(name = "kyc_records")
+public class KycRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "couple_id")
     private Couple couple;
 
-    private Integer healthScore;
+    private Integer year;
 
-    private Integer loyaltyScore;
+    private boolean user1Confirmed;
 
-    private LocalDateTime lastUpdated;
+    private boolean user2Confirmed;
+
+    private String status; // VERIFIED, PENDING
 }
+
