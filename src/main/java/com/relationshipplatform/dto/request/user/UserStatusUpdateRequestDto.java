@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class UserVerifyRequestDto {
+public class UserStatusUpdateRequestDto {
 
-    @NotNull(message = "Verified flag is required")
-    private Boolean verified;
+    @NotNull(message = "Active status is required")
+    private Boolean active;
 }
