@@ -11,14 +11,14 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "promises")
-public class Promise {
+@Table(name = "restrictions")
+public class Restriction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String promiseId;
+    private String restrictionId;
 
     @ManyToOne
     @JoinColumn(name = "couple_id")
@@ -29,7 +29,4 @@ public class Promise {
     private boolean user1Approved;
 
     private boolean user2Approved;
-
-    private String status; // ACTIVE, BROKEN, COMPLETED
 }
-

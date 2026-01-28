@@ -11,25 +11,18 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "promises")
-public class Promise {
+@Table(name = "dreams")
+public class Dream {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String promiseId;
+    private String dreamId;
 
     @ManyToOne
     @JoinColumn(name = "couple_id")
     private Couple couple;
 
     private String description;
-
-    private boolean user1Approved;
-
-    private boolean user2Approved;
-
-    private String status; // ACTIVE, BROKEN, COMPLETED
 }
-

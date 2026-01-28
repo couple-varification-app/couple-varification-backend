@@ -11,25 +11,23 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "promises")
-public class Promise {
+@Table(name = "kyc_records")
+public class KycRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String promiseId;
-
     @ManyToOne
     @JoinColumn(name = "couple_id")
     private Couple couple;
 
-    private String description;
+    private Integer year;
 
-    private boolean user1Approved;
+    private boolean user1Confirmed;
 
-    private boolean user2Approved;
+    private boolean user2Confirmed;
 
-    private String status; // ACTIVE, BROKEN, COMPLETED
+    private String status; // VERIFIED, PENDING
 }
 
