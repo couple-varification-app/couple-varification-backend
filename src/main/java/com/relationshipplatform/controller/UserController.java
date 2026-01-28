@@ -18,10 +18,11 @@ public class UserController {
 
     private final UserService userService;
 
-
     @PostMapping("/users/{userId}/verify")
-    public UserResponseDto verifyUser(@PathVariable String userId, @Valid @RequestBody UserVerifyRequestDto dto) {
+    public UserResponseDto verifyUser(
+            @PathVariable String userId,
+            @Valid @RequestBody UserVerifyRequestDto dto) {
 
-    return userService.verifyUser(userId, dto);
-}
+        return userService.verifyUser(userId, dto);
+    }
 }
