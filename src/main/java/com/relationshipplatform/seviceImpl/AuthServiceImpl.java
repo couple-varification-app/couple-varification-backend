@@ -3,6 +3,7 @@ package com.relationshipplatform.service.impl;
 import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
+import com.relationshipplatform.dto.response.relationship.RelationshipStatusInfo;
 import com.relationshipplatform.dto.response.user.UserResponse;
 import com.relationshipplatform.entity.Couple;
 import com.relationshipplatform.entity.User;
@@ -217,7 +218,7 @@ public class AuthServiceImpl implements AuthService {
             Long expiresIn = jwtUtil.getExpirationInSeconds();
 
             // 7. Get relationship status
-            RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
+            com.relationshipplatform.dto.response.auth.AuthResponse.RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
 
             // 8. Build response
             UserResponse userResponse = userMapper.toResponse(user);
