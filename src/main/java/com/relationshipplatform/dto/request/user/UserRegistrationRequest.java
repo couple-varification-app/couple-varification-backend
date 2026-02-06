@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class UserCreateRequestDto {
+public class UserRegistrationRequest {
     
     @NotBlank(message = "UserId is required")
     @Size(min = 5, max = 50, message = "UserId must be between 5 and 50 characters")
