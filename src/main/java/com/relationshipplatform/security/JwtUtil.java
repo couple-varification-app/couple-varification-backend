@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import javax.crypto.SecretKey;
+
 /**
  * JWT Utility class for token generation and validation
  * Handles all JWT operations
@@ -34,49 +36,50 @@ public class JwtUtil {
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private Long expiration;
 
-    private Key getSigningKey() {
+    private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // /**
-    //  * Generate JWT token for user
-    //  */
-    // public String generateToken(String userId, String email) {
-    //     Map<String, Object> claims = new HashMap<>();
-    //     claims.put("userId", userId);
-    //     claims.put("email", email);
-    //     return createToken(claims, email);
-    // }
-
-     //generate token:
-    public String generateAccessToken(User user) {
-        Instant now = Instant.now();
-        List<String> roles;
-
-        return Jwts.builder()
-                .id(UUID.randomUUID().toString())
-                .subject(user.getId().toString())
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(expiration)))
-                .claim("email", user.getEmail())
-                .claim("roles", roles)
-                .claim("typ", "access")
-                .signWith(secret, SignatureAlgorithm.HS256)
-                .compact();
+    /**
+     * Generate JWT token for user
+     */
+    public String generateToken(String userId, String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("email", email);
+        return createToken(claims, email);
     }
+
+    //  //generate token:
+    // public String generateAccessToken(User user) {
+    //     Instant now = Instant.now();
+    //     List<String> roles;
+
+    //     return Jwts.builder()
+    //             .id(UUID.randomUUID().toString())
+    //             .subject(user.getId().toString())
+    //             .issuedAt(Date.from(now))
+    //             .expiration(Date.from(now.plusSeconds(expiration)))
+    //             .claim("email", user.getEmail())
+    //             .claim("roles", roles)
+    //             .claim("typ", "access")
+    //             .signWith(secret, SignatureAlgorithm.HS256)
+    //             .compact();
+    // }
     /**
      * Create JWT token with claims
      */
+    
     private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .addClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .(getSigningKey(), SignatureAlgorithm.HS256)
+                .claims(claims)                    // ✅ Modern: claims() instead of setClaims()
+                .subject(subject)                  // ✅ Modern: subject() instead of setSubject()
+                .issuedAt(now)                     // ✅ Modern: issuedAt() instead of setIssuedAt()
+                .expiration(expiryDate)            // ✅ Modern: expiration() instead of setExpiration()
+                .signWith(getSigningKey())         // ✅ Modern: signWith(Key) - algorithm auto-detected
                 .compact();
     }
 
@@ -120,11 +123,11 @@ public class JwtUtil {
      * Extract all claims from token
      */
     private Claims extractAllClaims(String token) {
-        return  Jwts.builder()
-                .signWith(getSigningKey()))
+        return Jwts.parser()                       // ✅ Modern: parser() instead of parserBuilder()
+                .verifyWith(getSigningKey())       // ✅ Modern: verifyWith() instead of setSigningKey()
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)          // ✅ Modern: parseSignedClaims() instead of parseClaimsJws()
+                .getPayload();                     // ✅ Modern: getPayload() instead of getBody()
     }
 
     /**

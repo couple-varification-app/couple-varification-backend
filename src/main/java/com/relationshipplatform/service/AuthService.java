@@ -50,7 +50,7 @@ public interface AuthService {
      * @param oldToken Current JWT token
      * @return New AuthResponse with refreshed token
      */
-    AuthResponse refreshToken(String oldToken);
+   //// AuthResponse refreshToken(String oldToken);
 
     /**
      * Validate JWT token

@@ -102,30 +102,31 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Refresh JWT token
-     * POST /api/auth/refresh
-     * Header: Authorization: Bearer {token}
-     * 
-     * Response: New AuthResponse with refreshed token
-     */
-    @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
-            @RequestHeader("Authorization") String authHeader) {
+    // /**
+    //  * Refresh JWT token
+    //  * POST /api/auth/refresh
+    //  * Header: Authorization: Bearer {token}
+    //  * 
+    //  * Response: New AuthResponse with refreshed token
+    //  */
+    // @PostMapping("/refresh")
+    // public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
+    //         @RequestHeader("Authorization") String authHeader) {
         
-        log.info("POST /api/auth/refresh - Token refresh request");
+    //     log.info("POST /api/auth/refresh - Token refresh request");
         
-        String oldToken = authHeader.replace("Bearer ", "");
-        AuthResponse authResponse = authService.refreshToken(oldToken);
+    //     String oldToken = authHeader.replace("Bearer ", "");
+    //     AuthResponse authResponse = authService.refreshToken(oldToken);
         
-        ApiResponse<AuthResponse> response = ApiResponse.success(
-            authResponse, 
-            "Token refreshed successfully"
-        );
+    //     ApiResponse<AuthResponse> response = ApiResponse.success(
+    //         authResponse, 
+    //         "Token refreshed successfully"
+    //     );
         
-        return ResponseEntity.ok(response);
-    }
+    //     return ResponseEntity.ok(response);
+    // }
 
+    
     /**
      * Validate JWT token
      * GET /api/auth/validate
