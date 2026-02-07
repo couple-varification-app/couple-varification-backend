@@ -1,5 +1,6 @@
 package com.relationshipplatform.mapper;
 
+import com.relationshipplatform.dto.response.user.UserResponse;
 import com.relationshipplatform.entity.User;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +14,7 @@ public class UserMapper {
      * Convert User entity to UserResponse DTO
      * Excludes sensitive information like password
      */
-    public com.relationshipplatform.dto.response.user.UserResponse toResponse(User user) {
+    public UserResponse toResponse(User user) {
         if (user == null) {
             return null;
         }
@@ -27,7 +28,7 @@ public class UserMapper {
             currentCoupleId = user.getCoupleAsUser2().getCoupleId();
         }
 
-        return com.relationshipplatform.dto.response.user.UserResponse.builder()
+        return UserResponse.builder()
                 .userId(user.getUserId())
                 .name(user.getName())
                 .email(user.getEmail())

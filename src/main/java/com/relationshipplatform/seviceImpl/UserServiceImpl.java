@@ -1,5 +1,6 @@
 package com.relationshipplatform.seviceImpl;
 
+import com.relationshipplatform.dto.request.login.PasswordChangeRequestDto;
 import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
@@ -8,6 +9,7 @@ import com.relationshipplatform.entity.User;
 import com.relationshipplatform.exception.*;
 import com.relationshipplatform.mapper.UserMapper;
 import com.relationshipplatform.repository.UserRepository;
+import com.relationshipplatform.security.JwtUtil;
 import com.relationshipplatform.service.UserService;
 import com.relationshipplatform.utility.AgeCalculator;
 import com.relationshipplatform.utility.PasswordEncoderUtil;
@@ -29,6 +31,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final JwtUtil jwtUtil;
     private final PasswordEncoderUtil passwordEncoder;
     // Add JWT token service/utility when implementing authentication
     // private final JwtTokenProvider jwtTokenProvider;
@@ -99,8 +102,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 4. Generate JWT token - Implement with Spring Security/JWT
-        String token = generateJwtToken(user); // Replace with actual JWT generation
-
+        String token = jwtUtil.generateToken(user.getUserId(), user.getEmail());
         log.info("User logged in successfully: {}", user.getUserId());
 
         // 5. Return auth response
@@ -209,11 +211,68 @@ public class UserServiceImpl implements UserService {
         return userId;
     }
 
-    private String generateJwtToken(User user) {
-        // TODO: Implement JWT token generation
-        // return jwtTokenProvider.generateToken(user.getEmail(), user.getUserId(), user.getRoles());
-        
-        // Temporary placeholder - replace with actual JWT implementation
-        return "JWT_TOKEN_" + user.getUserId() + "_" + System.currentTimeMillis();
+    @Override
+    @Transactional
+    public void reactivateUser(String userId) {
+        log.info("Reactivating user: {}", userId);
+
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+
+        user.setActive(true);
+        userRepository.save(user);
+
+        log.info("User reactivated successfully: {}", userId);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserProfile(String userId, String name) {
+        log.info("Updating profile for user: {}", userId);
+
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+
+        // Update name
+        if (name != null && !name.trim().isEmpty()) {
+            user.setName(name);
+        }
+
+        // Recalculate age (in case DOB was updated)
+        if (user.getDob() != null) {
+            user.setAge(AgeCalculator.calculateAge(user.getDob()));
+        }
+
+        User updatedUser = userRepository.save(user);
+        log.info("User profile updated successfully: {}", userId);
+
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String userId, PasswordChangeRequestDto request) {
+        log.info("Changing password for user: {}", userId);
+
+        // 1. Validate new password matches confirm password
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidOperationException("New password and confirm password do not match");
+        }
+
+        // 2. Find user
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
+
+        // 3. Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            log.warn("Invalid current password attempt for user: {}", userId);
+            throw new AuthenticationException("Current password is incorrect");
+        }
+
+        // 4. Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        log.info("Password changed successfully for user: {}", userId);
     }
 }

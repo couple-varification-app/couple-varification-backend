@@ -158,20 +158,5 @@ public class AuthController {
      * 
      * Response: User information
      */
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<String>> getCurrentUser(
-            @RequestHeader("Authorization") String authHeader) {
-        
-        log.info("GET /api/auth/me - Get current user");
-        
-        String token = authHeader.replace("Bearer ", "");
-        String userId = authService.getUserIdFromToken(token);
-        
-        ApiResponse<String> response = ApiResponse.success(
-            userId, 
-            "User ID retrieved successfully"
-        );
-        
-        return ResponseEntity.ok(response);
-    }
+    
 }

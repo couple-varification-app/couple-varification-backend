@@ -48,11 +48,31 @@ public class CustomUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
-                .authorities(new ArrayList<>()) // Empty authorities for now
+                .authorities("ROLE_USER") // Empty authorities for now
                 .accountExpired(false)
                 .accountLocked(false)
                 .credentialsExpired(false)
                 .disabled(!user.isActive())
                 .build();
     }
+
+
+    // ============= IMPORTANT FOR LATER ======================
+//     6. Proper long-term design (production-ready)
+
+// Later, when you add roles to DB:
+
+// Example DB roles
+// USER
+// ADMIN
+
+// Map them correctly
+// List<GrantedAuthority> authorities =
+//         user.getRoles().stream()
+//             .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+//             .toList();
+
+
+// And pass that list into .authorities(...).
+
 }

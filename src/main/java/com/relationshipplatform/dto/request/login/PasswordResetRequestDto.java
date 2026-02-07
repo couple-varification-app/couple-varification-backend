@@ -7,20 +7,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for user login request
- * Contains email and password for authentication
+ * DTO for password reset request
+ * User requests password reset link
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserLoginRequest {
+public class PasswordResetRequestDto {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
-
-    @NotBlank(message = "Password is required")
-    private String password;
-
-    // private boolean rememberMe; // Optional: for extended token expiration
 }

@@ -2,6 +2,7 @@ package com.relationshipplatform.service;
 
 import org.springframework.stereotype.Service;
 
+import com.relationshipplatform.dto.request.login.PasswordChangeRequestDto;
 import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
@@ -55,11 +56,31 @@ public interface UserService {
     boolean isUserInActiveCouple(String userId);
 
     /**
+     * Update user profile
+     * 
+     * @param userId Public user ID
+     * @param name New name
+     * @return Updated user details
+     */
+    UserResponse updateUserProfile(String userId, String name);
+
+    /**
+     * Change user password
+     * 
+     * @param userId Public user ID
+     * @param request Password change details
+     */
+    void changePassword(String userId, PasswordChangeRequestDto request);
+
+
+    /**
      * Deactivate user account
      * 
      * @param userId Public user ID
      */
     void deactivateUser(String userId);
+
+    void reactivateUser(String userId);
 
     void activateUser(String userId);
     
