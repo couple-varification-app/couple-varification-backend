@@ -113,24 +113,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    // private final UserRepository userRepository;
-    // private final CoupleRepository coupleRepository;
-    // private final UserMapper userMapper;
-    // private final PasswordEncoderUtil passwordEncoder;
-    // private final JwtUtil jwtUtil;
-
-    // public AuthServiceImpl(UserRepository userRepository,
-    //                        CoupleRepository coupleRepository,
-    //                        UserMapper userMapper,
-    //                        PasswordEncoderUtil passwordEncoder,
-    //                        JwtUtil jwtUtil) {
-    //     this.userRepository = userRepository;
-    //     this.coupleRepository = coupleRepository;
-    //     this.userMapper = userMapper;
-    //     this.passwordEncoder = passwordEncoder;
-    //     this.jwtUtil = jwtUtil;
-    // }
-
     // @Override
     // @Transactional
     // public AuthResponse register(UserRegistrationRequest request) {
