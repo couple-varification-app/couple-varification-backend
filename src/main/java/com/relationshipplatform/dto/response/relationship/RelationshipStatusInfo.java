@@ -79,7 +79,9 @@ public class RelationshipStatusInfo {
     // ========================================
     // DASHBOARD METRICS
     // ========================================
-
+    private boolean hasActiveCouple;
+    private boolean hasPendingCoupleRequest;
+    private String pendingRequestFrom;
     private Integer activePromisesCount;
     private Integer activeDreamsCount;
     private Integer activeRestrictionsCount;
