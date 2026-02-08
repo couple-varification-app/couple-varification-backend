@@ -5,6 +5,7 @@ import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
 import com.relationshipplatform.dto.response.user.UserResponse;
+import com.relationshipplatform.entity.Role;
 import com.relationshipplatform.entity.User;
 import com.relationshipplatform.exception.*;
 import com.relationshipplatform.mapper.UserMapper;
@@ -15,10 +16,14 @@ import com.relationshipplatform.utility.AgeCalculator;
 import com.relationshipplatform.utility.PasswordEncoderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
 import java.util.UUID;
+
 
 /**
  * Implementation of UserService
@@ -33,6 +38,17 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
     private final PasswordEncoderUtil passwordEncoder;
+    
+    @Autowired
+    public UserServiceImpl(UserRepository userRepository, 
+                               UserMapper userMapper,
+                               PasswordEncoderUtil passwordEncoder,
+                                JwtUtil jwtUtil) {
+            this.userRepository = userRepository;
+            this.userMapper = userMapper;
+            this.jwtUtil = jwtUtil;
+            this.passwordEncoder = passwordEncoder;
+        }
     // Add JWT token service/utility when implementing authentication
     // private final JwtTokenProvider jwtTokenProvider;
 
@@ -65,9 +81,11 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .dob(request.getDob())
                 .age(age)
+                .roles(Set.of(Role.ROLE_USER))
                 .verified(false)
                 .active(true)
                 .build();
+                // user.addRole(Role.ROLE_USER);    this is another way to store role 
 
         // 5. Save to database
         User savedUser = userRepository.save(user);

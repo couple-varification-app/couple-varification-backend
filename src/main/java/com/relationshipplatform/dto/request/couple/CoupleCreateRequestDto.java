@@ -16,8 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CoupleRegistrationRequest {
-    private static final long serialVersionUID = 1L;
+public class CoupleCreateRequestDto {
 
     @NotBlank(message = "Partner User ID is required")
     @Pattern(

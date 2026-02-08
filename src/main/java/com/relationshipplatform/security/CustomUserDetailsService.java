@@ -1,8 +1,17 @@
 package com.relationshipplatform.security;
 
+import com.relationshipplatform.entity.Role;
 import com.relationshipplatform.entity.User;
 import com.relationshipplatform.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -37,8 +46,10 @@ public class CustomUserDetailsService implements UserDetailsService {
             log.warn("Inactive user attempted to authenticate: {}", email);
             throw new UsernameNotFoundException("User account is deactivated");
         }
+        // Convert roles to GrantedAuthorities
+        Collection<? extends GrantedAuthority> authorities = getAuthorities(user.getRoles());
 
-        log.debug("User loaded successfully: {}", email);
+        log.debug("User loaded successfully: {} with roles: {}", email, authorities);
 
         // Return Spring Security UserDetails
         // We're using email as username, password is already encrypted
@@ -60,17 +71,21 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 // Later, when you add roles to DB:
 
-// Example DB roles
-// USER
-// ADMIN
+/**
+     * Convert Role enum to Spring Security GrantedAuthority
+     * 
+     * @param roles Set of Role enums
+     * @return Collection of GrantedAuthority
+     */
+    private Collection<? extends GrantedAuthority> getAuthorities(Set<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            // Default to ROLE_USER if no roles assigned
+            return Set.of(new SimpleGrantedAuthority(Role.ROLE_USER.name()));
+        }
 
-// Map them correctly
-// List<GrantedAuthority> authorities =
-//         user.getRoles().stream()
-//             .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-//             .toList();
-
-
-// And pass that list into .authorities(...).
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toSet());
+    }
 
 }

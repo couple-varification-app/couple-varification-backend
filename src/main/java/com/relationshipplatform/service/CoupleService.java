@@ -2,8 +2,8 @@ package com.relationshipplatform.service;
 
 import java.util.List;
 
-import com.relationshipplatform.dto.request.couple.CoupleAcceptanceRequest;
-import com.relationshipplatform.dto.request.couple.CoupleRegistrationRequest;
+import com.relationshipplatform.dto.request.couple.CoupleAcceptRequestDto;
+import com.relationshipplatform.dto.request.couple.CoupleCreateRequestDto;
 import com.relationshipplatform.dto.request.couple.CoupleUpdateRequestDto;
 import com.relationshipplatform.dto.response.couple.CoupleResponse;
 
@@ -20,7 +20,7 @@ public interface CoupleService {
      * @param request Couple registration details
      * @return Created couple response (PENDING status)
      */
-    CoupleResponse createCoupleRequest(String initiatorUserId, CoupleRegistrationRequest request);
+    CoupleResponse createCoupleRequest(String initiatorUserId, CoupleCreateRequestDto request);
 
     /**
      * Partner accepts or rejects couple request
@@ -32,7 +32,7 @@ public interface CoupleService {
      * @param request Acceptance details
      * @return Updated couple response or null if rejected
      */
-    CoupleResponse respondToCoupleRequest(String partnerUserId, CoupleAcceptanceRequest request);
+    CoupleResponse respondToCoupleRequest(String partnerUserId, CoupleAcceptRequestDto request);
 
     /**
      * Get couple details by Couple ID

@@ -64,7 +64,6 @@ public class UserController {
         return ResponseEntity.ok(response);
 
     }
-
     @PutMapping("/{userId}/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserProfile(@PathVariable String userId, @RequestParam(required = false) String name){
 
@@ -90,7 +89,7 @@ public class UserController {
 
     // ====== DINESH BHAI, WE SHOULD WORK HARD TO GET SUCCEED =======
 
-    @PreAuthorize("#userId == authentication.name")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/{userId}/couple-status")
     public ResponseEntity<ApiResponse<Boolean>> checkCoupleStatus(@PathVariable String userId){
         
