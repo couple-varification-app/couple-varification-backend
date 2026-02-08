@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,11 +16,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security Configuration
- * Configures JWT-based authentication
+ * Updated Security Configuration with Role-Based Authorization
+ * 
+ * Changes:
+ * 1. Added @EnableMethodSecurity for @PreAuthorize support
+ * 2. Configured endpoint authorization by role
+ * 3. Public endpoints don't require authentication
+ * 4. User endpoints require ROLE_USER
+ * 5. Admin endpoints require ROLE_ADMIN
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity  // 🆕 Enables @PreAuthorize, @Secured, etc.
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -33,6 +41,7 @@ public class SecurityConfig {
 
     /**
      * Security filter chain configuration
+     * Defines which endpoints require which roles
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,17 +51,42 @@ public class SecurityConfig {
             
             // Configure authorization
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints (no authentication required)
+                // ========================================
+                // PUBLIC ENDPOINTS (No authentication)
+                // ========================================
                 .requestMatchers(
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/refresh",
                     "/api/verification/**",  // Public verification
                     "/error",
-                    "/actuator/**",          // If using Spring Actuator
-                    "/swagger-ui/**",        // If using Swagger
-                    "/v3/api-docs/**"        // If using Swagger
+                    "/actuator/health",      // Health check
+                    "/swagger-ui/**",        // Swagger UI
+                    "/v3/api-docs/**"        // OpenAPI docs
                 ).permitAll()
+                
+                // ========================================
+                // ADMIN ENDPOINTS (Require ROLE_ADMIN)
+                // ========================================
+                .requestMatchers(
+                    "/api/users/*/deactivate",     // Only admin can deactivate users
+                    "/api/couples/all",            // View all couples
+                    "/api/admin/**"                // All admin endpoints
+                ).hasRole("ADMIN")  // 🆕 Requires ROLE_ADMIN
+                
+                // ========================================
+                // USER ENDPOINTS (Require ROLE_USER or higher)
+                // ========================================
+                .requestMatchers(
+                    "/api/users/**",
+                    "/api/couples/**",
+                    "/api/promises/**",
+                    "/api/dreams/**",
+                    "/api/restrictions/**",
+                    "/api/breakups/**",
+                    "/api/conflicts/**",
+                    "/api/kyc/**"
+                ).hasAnyRole("USER", "ADMIN", "MODERATOR")  // 🆕 Requires any role
                 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
@@ -64,6 +98,7 @@ public class SecurityConfig {
             )
             
             // Add JWT filter before username/password authentication
+            
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -75,6 +110,15 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+    
+    /**
+     * Authentication manager bean
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) 
+            throws Exception {
+        return config.getAuthenticationManager();
     }
 
     /**
@@ -88,12 +132,4 @@ public class SecurityConfig {
     //     return authProvider;
     // }
 
-    /**
-     * Authentication manager bean
-     */
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) 
-            throws Exception {
-        return config.getAuthenticationManager();
-    }
 }
