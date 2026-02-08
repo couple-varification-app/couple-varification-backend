@@ -55,7 +55,6 @@ public class SecurityConfig {
                     "/swagger-ui/**",        // If using Swagger
                     "/v3/api-docs/**"        // If using Swagger
                 ).permitAll()
-                .requestMatchers("/api/users/me").hasRole("USER")
                 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
