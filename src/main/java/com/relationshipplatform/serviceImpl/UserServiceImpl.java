@@ -1,4 +1,4 @@
-package com.relationshipplatform.seviceImpl;
+package com.relationshipplatform.serviceImpl;
 
 import com.relationshipplatform.dto.request.login.PasswordChangeRequestDto;
 import com.relationshipplatform.dto.request.login.UserLoginRequest;

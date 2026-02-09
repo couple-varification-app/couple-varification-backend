@@ -1,4 +1,4 @@
-package com.relationshipplatform.seviceImpl;
+package com.relationshipplatform.serviceImpl;
 
 import java.time.LocalDateTime;
 import java.util.List;
