@@ -36,8 +36,10 @@ public class IdGenerator {
      * Format: PRM-{timestamp}-{random}
      * Example: PRM-1234567890-C2Z8N
      */
-    public static String generatePromiseId() {
-        return generateId("PRM");
+     public static String generatePromiseId() {
+        long timestamp = Instant.now().toEpochMilli();
+        String randomPart = generateRandomString(5);
+        return "PRM-" + timestamp + "-" + randomPart;
     }
 
     /**
@@ -46,8 +48,11 @@ public class IdGenerator {
      * Example: DRM-1234567890-D5W3P
      */
     public static String generateDreamId() {
-        return generateId("DRM");
+        long timestamp = Instant.now().toEpochMilli();
+        String randomPart = generateRandomString(5);
+        return "DRM-" + timestamp + "-" + randomPart;
     }
+
 
     /**
      * Generate Restriction ID
@@ -55,7 +60,9 @@ public class IdGenerator {
      * Example: RST-1234567890-E1Q6R
      */
     public static String generateRestrictionId() {
-        return generateId("RST");
+        long timestamp = Instant.now().toEpochMilli();
+        String randomPart = generateRandomString(5);
+        return "RST-" + timestamp + "-" + randomPart;
     }
 
     /**
@@ -64,7 +71,9 @@ public class IdGenerator {
      * Example: BRK-1234567890-F8T2S
      */
     public static String generateBreakupId() {
-        return generateId("BRK");
+        long timestamp = Instant.now().toEpochMilli();
+        String randomPart = generateRandomString(5);
+        return "BRK-"+timestamp+ "-"+randomPart;
     }
 
     /**
@@ -93,4 +102,5 @@ public class IdGenerator {
     public static String generateUUID() {
         return UUID.randomUUID().toString();
     }
+
 }
