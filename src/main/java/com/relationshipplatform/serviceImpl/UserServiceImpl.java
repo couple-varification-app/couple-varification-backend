@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -293,4 +294,13 @@ public class UserServiceImpl implements UserService {
 
         log.info("Password changed successfully for user: {}", userId);
     }
+
+    @Override
+public List<UserResponse> getAllUsers() {
+    List<User> users = userRepository.findAll();
+
+    return users.stream()
+            .map(userMapper::toResponse)
+            .toList();
+}
 }

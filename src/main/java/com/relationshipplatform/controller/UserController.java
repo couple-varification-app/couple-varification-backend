@@ -1,6 +1,8 @@
 package com.relationshipplatform.controller;
 
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,6 +49,22 @@ public class UserController {
         
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Get all user details (ONLY ADMIN CAN ACCESS)
+     * GET /api/users/
+     */
+    @GetMapping("")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(){
+        log.info("GET /api/users/{} - Fetching user");
+
+        List<UserResponse> users = userService.getAllUsers();
+        ApiResponse<List<UserResponse>> response = ApiResponse.success(users,"User retrieved successfully");
+        
+        return ResponseEntity.ok(response);
+    }
+
 
     /**
      * Get user by email

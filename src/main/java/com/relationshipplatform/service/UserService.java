@@ -1,5 +1,7 @@
 package com.relationshipplatform.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.relationshipplatform.dto.request.login.PasswordChangeRequestDto;
@@ -7,6 +9,7 @@ import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
 import com.relationshipplatform.dto.response.user.UserResponse;
+import com.relationshipplatform.entity.User;
 
 @Service
 public interface UserService {
@@ -83,5 +86,7 @@ public interface UserService {
     void reactivateUser(String userId);
 
     void activateUser(String userId);
+
+    public List<UserResponse> getAllUsers();
     
 }
