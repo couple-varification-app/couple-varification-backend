@@ -7,10 +7,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class UserCreateRequestDto {
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserRegistrationRequest {
     
     @NotBlank(message = "UserId is required")
     @Size(min = 5, max = 50, message = "UserId must be between 5 and 50 characters")
@@ -31,4 +35,9 @@ public class UserCreateRequestDto {
     @NotNull(message = "Date of birth is required")
     @Past(message = "Date of birth must be in the past")
     private LocalDate dob;
+
+    private String gender; // Optional: MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
+
+    private String phoneNumber; // Optional: for verification
+
 }
