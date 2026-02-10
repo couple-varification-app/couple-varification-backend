@@ -54,8 +54,8 @@ public class UserController {
      * Get all user details (ONLY ADMIN CAN ACCESS)
      * GET /api/users/
      */
-    @GetMapping("")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/tab")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")  // USE hasAuthority to not be confused 
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(){
         log.info("GET /api/users/{} - Fetching user");
 
