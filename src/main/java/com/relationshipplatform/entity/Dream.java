@@ -1,5 +1,8 @@
 package com.relationshipplatform.entity;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,4 +28,19 @@ public class Dream {
     private Couple couple;
 
     private String description;
+
+     private String status; // ACTIVE, ACHIEVED, ABANDONED
+    private String category; //Values: TRAVEL, FINANCIAL, FAMILY, CAREER, HEALTH, HOME, etc.
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDate targetDate;
+    private LocalDateTime achievedAt; // When dream was achieved
+    
+    // Optional: Include basic couple info
+    private String user1Name;
+    private String user2Name;
+    
+    // Computed fields
+    private boolean isAchieved;
+    private Long daysActive; // How long dream has been active
 }
