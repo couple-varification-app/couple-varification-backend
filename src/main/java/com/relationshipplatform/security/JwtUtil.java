@@ -1,7 +1,6 @@
 package com.relationshipplatform.security;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -133,14 +132,9 @@ public class JwtUtil {
     /**
      * Validate token
      */
-    public Boolean isValidateToken(String token, UserDetails userDetails) {
-        try{
-            final String username = extractUsername(token);
-
-            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-        } catch (Exception e){
-            return false;
-        }
+    public Boolean validateToken(String token, String email) {
+        final String username = extractUsername(token);
+        return (username.equals(email) && !isTokenExpired(token));
     }
 
     /**

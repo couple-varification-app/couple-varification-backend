@@ -73,7 +73,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("User authorities: {}", userDetails.getAuthorities());
 
                 // 6. Validate token
-                if (jwtUtil.isValidateToken(jwt, userDetails)) {  // Here i passed userDetails instead of String username only
+                if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
                     
                     // 7. Create authentication token
                     UsernamePasswordAuthenticationToken authToken = 

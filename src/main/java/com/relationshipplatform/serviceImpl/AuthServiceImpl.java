@@ -23,7 +23,6 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -172,7 +171,9 @@ public class AuthServiceImpl implements AuthService {
     public boolean validateToken(String token) {
         try {
             String email = jwtUtil.extractUsername(token);
+
             return jwtUtil.validateToken(token, email);
+
         } catch (Exception e) {
             log.warn("Token validation failed: {}", e.getMessage());
             return false;
