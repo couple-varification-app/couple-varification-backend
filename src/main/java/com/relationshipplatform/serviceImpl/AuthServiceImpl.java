@@ -115,6 +115,10 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    /** Here we have done manual authentication of user credentials/ instead we can add fully spring security implementation using 
+     * userDetailsService and authenticationManager, If needed we can do it later 
+    */
+   
     @Override
     public AuthResponse login(UserLoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
