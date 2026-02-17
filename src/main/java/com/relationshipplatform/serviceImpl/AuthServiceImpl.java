@@ -10,6 +10,7 @@ import com.relationshipplatform.exception.*;
 import com.relationshipplatform.mapper.UserMapper;
 import com.relationshipplatform.repository.CoupleRepository;
 import com.relationshipplatform.repository.UserRepository;
+import com.relationshipplatform.security.CustomUserDetails;
 import com.relationshipplatform.security.JwtUtil;
 import com.relationshipplatform.service.AuthService;
 import com.relationshipplatform.utility.AgeCalculator;
@@ -23,6 +24,9 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final CoupleRepository coupleRepository;
+    private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
     private final PasswordEncoderUtil passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -44,11 +49,13 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(UserRepository userRepository,
                            CoupleRepository coupleRepository,
                            UserMapper userMapper,
+                           AuthenticationManager authenticationManager,
                            PasswordEncoderUtil passwordEncoder,
                            JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.coupleRepository = coupleRepository;
         this.userMapper = userMapper;
+        this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
@@ -122,41 +129,39 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(UserLoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
 
-        // 1. Find user by email
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        
-                        new AuthenticationException("Invalid email or password")
-                );
+        // 1. Spring Security handles everything:
+    //    - Calls CustomUserDetailsService.loadUserByUsername()
+    //    - Verifies BCrypt password via DaoAuthenticationProvider
+    //    - Calls CustomUserDetails.isEnabled() → throws DisabledException if inactive
+    //    - Throws BadCredentialsException for wrong password
+    Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(
+                    request.getEmail(),
+                    request.getPassword() 
+            )
+    );
 
-        // 2. Check if account is active
-        if (!user.isActive()) {
-            log.warn("Login attempt for inactive account: {}", request.getEmail());
-            throw new AuthenticationException("Account is deactivated");
-        }
+    // 2. Principal is your CustomUserDetails — cast to get the real User entity
+    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    User user = userDetails.getUser();
 
-        // 3. Verify password
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            log.warn("Login failed: Invalid password for email: {}", request.getEmail());
-            throw new AuthenticationException("Invalid email or password");
-        }
+    // 3. Generate JWT
+    String token = jwtUtil.generateToken(user.getUserId(), user.getEmail());
 
-        // 4. Generate JWT token
-        String token = jwtUtil.generateToken(user.getUserId(),user.getEmail());
+    // 4. Your custom business logic
+    RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
 
-        //5. Get relationship status
-        RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
+    log.info("User logged in successfully: {}", user.getUserId());
 
-        log.info("User logged in successfully: {}", user.getUserId());
-
-        return AuthResponse.builder()
-                .token(token)
-                .tokenType("Bearer")
-                .expiresIn(jwtUtil.getExpirationInSeconds())
-                .user(userMapper.toResponse(user))
-                .message("Login successful")
-                .firstLogin(false)
-                .build();
+    return AuthResponse.builder()
+            .token(token)
+            .tokenType("Bearer")
+            .expiresIn(jwtUtil.getExpirationInSeconds())
+            .user(userMapper.toResponse(user))
+            .relationshipStatus(relationshipStatus)
+            .message("Login successful")
+            .firstLogin(false)
+            .build();
     }
 
         @Override
