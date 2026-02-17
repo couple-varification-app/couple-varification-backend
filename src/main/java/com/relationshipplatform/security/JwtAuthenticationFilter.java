@@ -50,10 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            // ========================================
-            // 🔧 FIX: PROPERLY EXTRACT TOKEN
-            // ========================================
-            // Extract token after "Bearer " and TRIM whitespace
+
             final String jwt = authHeader.substring(7).trim();  // 🆕 Added .trim()
             
             log.debug("Extracted JWT token: {}", jwt.substring(0, Math.min(20, jwt.length())) + "...");
@@ -66,9 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 4. Check if user is not already authenticated
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
-                // 5. Load user details
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
+                // loadUserByUsername returns CustomUserDetails wrapping your real User
+                CustomUserDetails userDetails =
+                        (CustomUserDetails) userDetailsService.loadUserByUsername(userEmail);
+                        
                 log.debug("Loaded user details for: {}", userEmail);
                 log.debug("User authorities: {}", userDetails.getAuthorities());
 
@@ -98,8 +96,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
+            // Log but don't throw — Spring Security will reject the request if unauthenticated
             log.error("Cannot set user authentication: {}", e.getMessage());
-            // Don't throw exception - let request continue to be rejected by security
+            
         }
 
         // 10. Continue filter chain
