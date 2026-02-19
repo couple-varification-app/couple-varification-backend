@@ -57,8 +57,9 @@ public class SecurityConfig {
                     "/api/verification/**",  // Public verification
                     "/error",
                     "/actuator/health",      // Health check
-                    "/swagger-ui/**",        // Swagger UI
+                    "/swagger-ui.html",        // Swagger UI
                     "/v3/api-docs/**"        // OpenAPI docs
+
                 ).permitAll()
                 
                 // ========================================

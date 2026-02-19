@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.relationshipplatform.dto.request.dream.DreamCreateRequestDto;
-import com.relationshipplatform.dto.request.dream.DreamUpdateRequestDto;
 import com.relationshipplatform.dto.response.dream.DreamResponse;
 import com.relationshipplatform.entity.Couple;
 import com.relationshipplatform.entity.Dream;
