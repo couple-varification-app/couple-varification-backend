@@ -10,7 +10,7 @@ import com.relationshipplatform.entity.User;
 import com.relationshipplatform.exception.*;
 import com.relationshipplatform.mapper.UserMapper;
 import com.relationshipplatform.repository.UserRepository;
-import com.relationshipplatform.security.JwtUtil;
+import com.relationshipplatform.security.JwtService;
 import com.relationshipplatform.service.UserService;
 import com.relationshipplatform.utility.AgeCalculator;
 import com.relationshipplatform.utility.PasswordEncoderUtil;
@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,14 +38,14 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtUtil;
     private final PasswordEncoderUtil passwordEncoder;
     
     @Autowired
     public UserServiceImpl(UserRepository userRepository, 
                                UserMapper userMapper,
                                PasswordEncoderUtil passwordEncoder,
-                                JwtUtil jwtUtil) {
+                                JwtService jwtUtil) {
             this.userRepository = userRepository;
             this.userMapper = userMapper;
             this.jwtUtil = jwtUtil;
@@ -296,11 +297,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-public List<UserResponse> getAllUsers() {
-    List<User> users = userRepository.findAll();
+    public List<UserResponse> getAllUsers(Pageable pageable, String search) {
 
-    return users.stream()
-            .map(userMapper::toResponse)
-            .toList();
-}
+        List<User> users;
+        if (search == null || search.isBlank()) {
+                users = userRepository
+                    .findAll(pageable)
+                    .getContent();
+        } else {
+            users = userRepository      
+                        .findByNameContainingIgnoreCase(search, pageable)
+                        .getContent();
+        }
+
+        return users.stream()
+                .map(userMapper::toResponse)
+                .toList();
+    }
 }
