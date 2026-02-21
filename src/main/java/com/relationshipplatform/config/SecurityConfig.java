@@ -47,19 +47,25 @@ public class SecurityConfig {
             
             // Configure authorization
             .authorizeHttpRequests(auth -> auth
+                
                 // ========================================
-                // PUBLIC ENDPOINTS (No authentication)
+                // 🔓 PUBLIC ENDPOINTS
                 // ========================================
                 .requestMatchers(
-                    "/api/auth/register",
-                    "/api/auth/login",
-                    "/api/auth/refresh",
-                    "/api/verification/**",  // Public verification
-                    "/error",
-                    "/actuator/health",      // Health check
-                    "/swagger-ui.html",        // Swagger UI
-                    "/v3/api-docs/**"        // OpenAPI docs
-
+                    // Auth endpoints
+                    "/api/auth/**",
+                    
+                    // ✅ SWAGGER - ALL PATTERNS (This was missing!)
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs",
+                    "/swagger-resources/**",
+                    "/webjars/**",
+                    
+                    // Health check
+                    "/actuator/health",
+                    "/error"
                 ).permitAll()
                 
                 // ========================================
