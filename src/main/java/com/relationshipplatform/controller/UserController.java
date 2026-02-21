@@ -3,6 +3,8 @@ package com.relationshipplatform.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,12 +56,25 @@ public class UserController {
      * Get all user details (ONLY ADMIN CAN ACCESS)
      * GET /api/users/
      */
-    @GetMapping("/tab")
+    @GetMapping("/all")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")  // USE hasAuthority to not be confused 
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(){
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(
+                    @RequestParam(defaultValue = "1", required = false) int pageNo, 
+                    @RequestParam(defaultValue = "5", required = false) int pageSize,
+                    @RequestParam String sortBy,
+                    @RequestParam String sortDirection,
+                    @RequestParam(required = false) String search){
         log.info("GET /api/users/{} - Fetching user");
 
-        List<UserResponse> users = userService.getAllUsers();
+        Sort sort = null;
+
+        if(sortDirection.equalsIgnoreCase("ASC")){
+            sort = Sort.by(sortBy).ascending();
+        } else {
+            sort = Sort.by(sortBy).descending();
+        }
+
+        List<UserResponse> users = userService.getAllUsers(PageRequest.of(pageNo - 1, pageSize, sort), search);  // can be take 2 and 3 parameters
         ApiResponse<List<UserResponse>> response = ApiResponse.success(users,"User retrieved successfully");
         
         return ResponseEntity.ok(response);
