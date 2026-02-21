@@ -24,11 +24,11 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
-        this.jwtUtil = jwtUtil;
+    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+        this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("Extracted JWT token: {}", jwt.substring(0, Math.min(20, jwt.length())) + "...");
 
             // 3. Extract username from token
-            final String userEmail = jwtUtil.extractUsername(jwt);
+            final String userEmail = jwtService.extractUsername(jwt);
 
             log.debug("Extracted email from token: {}", userEmail);
 
@@ -70,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("User authorities: {}", userDetails.getAuthorities());
 
                 // 6. Validate token
-                if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
+                if (jwtService.validateToken(jwt, userDetails.getUsername())) {
                     
                     // 7. Create authentication token
                     UsernamePasswordAuthenticationToken authToken = 
