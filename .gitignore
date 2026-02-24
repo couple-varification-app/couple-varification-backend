@@ -1,5 +1,6 @@
 HELP.md
 target/
+src/main/java/com/relationshipplatform/config/SwaggerConfig.java
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
