@@ -30,7 +30,6 @@ public class AuthController {
     /**
      * Register a new user
      * POST /api/auth/register
-     * 
      * Request Body:
      * {
      *   "name": "John Doe",
@@ -38,7 +37,7 @@ public class AuthController {
      *   "password": "SecurePass@123",
      *   "dob": "1995-05-15"
      * }
-     * 
+     *
      * Response: AuthResponse with JWT token
      */
     @PostMapping("/register")
@@ -59,13 +58,13 @@ public class AuthController {
     /**
      * Login user
      * POST /api/auth/login
-     * 
+     *
      * Request Body:
      * {
      *   "email": "john@example.com",
      *   "password": "SecurePass@123"
      * }
-     * 
+     *
      * Response: AuthResponse with JWT token and relationship status
      */
     @PostMapping("/login")
@@ -132,7 +131,7 @@ public class AuthController {
      * Validate JWT token
      * GET /api/auth/validate
      * Header: Authorization: Bearer {token}
-     * 
+     *
      * Response: Boolean indicating token validity
      */
     @GetMapping("/validate")
@@ -156,8 +155,24 @@ public class AuthController {
      * Get current user from token
      * GET /api/auth/me
      * Header: Authorization: Bearer {token}
-     * 
+     *
      * Response: User information
      */
+        @GetMapping("/me")
+    public ResponseEntity<ApiResponse<String>> getCurrentUser(
+            @RequestHeader("Authorization") String authHeader) {
+        
+        log.info("GET /api/auth/me - Get current user");
+        
+        String token = authHeader.replace("Bearer ", "");
+        String userId = authService.getUserIdFromToken(token);
+        
+        ApiResponse<String> response = ApiResponse.success(
+            userId, 
+            "User ID retrieved successfully"
+        );
+        
+        return ResponseEntity.ok(response);
+    }
     
 }

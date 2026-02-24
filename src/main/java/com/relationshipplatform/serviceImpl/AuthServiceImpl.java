@@ -124,7 +124,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(UserLoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
-
+        
         // 1. Spring Security handles everything:
     //    - Calls CustomUserDetailsService.loadUserByUsername()
     //    - Verifies BCrypt password via DaoAuthenticationProvider
@@ -249,7 +249,7 @@ public class AuthServiceImpl implements AuthService {
 
     
 
-    // ==================== Below code will used to implement the refresh token ====================
+    // ==================== Below code will be using to implement the refresh token ====================
 
 
     // @Override
@@ -263,7 +263,7 @@ public class AuthServiceImpl implements AuthService {
 
     //         // 2. Validate old token is not expired (can refresh before expiry)
     //         if (jwtUtil.isTokenExpired(oldToken)) {
-    //             throw new AuthenticationException("Token has expired. Please login again.");
+    //             throw new AuthenticationException("Token has expired. Please log in again.");
     //         }
 
     //         // 3. Find user
