@@ -65,6 +65,7 @@ public class SecurityConfig {
                     
                     // Health check
                     "/actuator/health",
+                    "/actuator/health/db",
                     "/error"
                 ).permitAll()
                 
