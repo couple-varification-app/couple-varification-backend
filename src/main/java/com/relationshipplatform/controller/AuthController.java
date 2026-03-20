@@ -4,12 +4,19 @@ import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.api.ApiResponse;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
+import com.relationshipplatform.dto.response.user.UserResponse;
+import com.relationshipplatform.entity.User;
+import com.relationshipplatform.exception.AuthenticationException;
+import com.relationshipplatform.mapper.UserMapper;
+import com.relationshipplatform.security.CustomUserDetails;
 import com.relationshipplatform.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -22,9 +29,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserMapper userMapper;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserMapper userMapper) {
         this.authService = authService;
+        this.userMapper = userMapper;
     }
 
     /**
@@ -158,20 +167,30 @@ public class AuthController {
      *
      * Response: User information
      */
-        @GetMapping("/me")
-    public ResponseEntity<ApiResponse<String>> getCurrentUser(
-            @RequestHeader("Authorization") String authHeader) {
-        
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
+
         log.info("GET /api/auth/me - Get current user");
-        
-        String token = authHeader.replace("Bearer ", "");
-        String userId = authService.getUserIdFromToken(token);
-        
-        ApiResponse<String> response = ApiResponse.success(
-            userId, 
-            "User ID retrieved successfully"
+
+        // ✅ Get authenticated user from SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationException("User is not authenticated");
+        }
+
+        // Extract user details
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userDetails.getUser();
+
+        // Return full user response instead of just userId
+        UserResponse userResponse = userMapper.toResponse(user);
+
+        ApiResponse<UserResponse> response = ApiResponse.success(
+                userResponse,
+                "User retrieved successfully"
         );
-        
+
         return ResponseEntity.ok(response);
     }
     

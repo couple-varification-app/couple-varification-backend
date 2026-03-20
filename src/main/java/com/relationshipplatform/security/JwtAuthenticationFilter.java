@@ -48,6 +48,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+//        if (request.getServletPath().contains("swagger") ||
+//                request.getServletPath().contains("v3/api-docs")) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+
         try {
 
             final String jwt = authHeader.substring(7).trim();  // 🆕 Added .trim()

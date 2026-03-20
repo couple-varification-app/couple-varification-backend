@@ -124,7 +124,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(UserLoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
-        
         // 1. Spring Security handles everything:
     //    - Calls CustomUserDetailsService.loadUserByUsername()
     //    - Verifies BCrypt password via DaoAuthenticationProvider
