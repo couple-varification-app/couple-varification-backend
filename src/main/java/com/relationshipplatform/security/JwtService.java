@@ -7,9 +7,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 import javax.crypto.SecretKey;
@@ -19,59 +18,57 @@ import javax.crypto.SecretKey;
  * Handles all JWT operations
  */
 @Component
-public class JwtUtil {
-
+public class JwtService {
+    //  Using for : Development-friendly with secure defaults
     // Get from application.properties
     @Value("${jwt.secret:mySecretKeyForRelationshipPlatformThatIsAtLeast256BitsLong12345678}")
     private String secret;
 
-    @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
+    @Value("${jwt.expiration:8640000}") // 24 hours in milliseconds
     private Long expiration;
 
+    // LONG-LIVED: Refresh Token (7 days)
+    @Value("${jwt.refresh-token.expiration:604800000}") // 7 days
+    private Long refreshTokenExpiration;
+
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        //  Added StandardCharsets.UTF_8 for consistency
     }
 
-    /**
-     * Generate JWT token for user
+     /**
+     *  BEST PRACTICE: Generate token with minimal claims
+     * 
+     * @param userId Public user ID (USR-xxx)
+     * @param email User's email
+     * @return JWT token
      */
+    // Generate ACCESS TOKEN (short-lived)
     public String generateToken(String userId, String email) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        claims.put("email", email);
-        return createToken(claims, email);
-    }
-
-    //  //generate token:
-    // public String generateAccessToken(User user) {
-    //     Instant now = Instant.now();
-    //     List<String> roles;
-
-    //     return Jwts.builder()
-    //             .id(UUID.randomUUID().toString())
-    //             .subject(user.getId().toString())
-    //             .issuedAt(Date.from(now))
-    //             .expiration(Date.from(now.plusSeconds(expiration)))
-    //             .claim("email", user.getEmail())
-    //             .claim("roles", roles)
-    //             .claim("typ", "access")
-    //             .signWith(secret, SignatureAlgorithm.HS256)
-    //             .compact();
-    // }
-    /**
-     * Create JWT token with claims
-     */
-    
-    private String createToken(Map<String, Object> claims, String subject) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .claims(claims)                    // ✅ Modern: claims() instead of setClaims()
-                .subject(subject)                  // ✅ Modern: subject() instead of setSubject()
-                .issuedAt(now)                     // ✅ Modern: issuedAt() instead of setIssuedAt()
-                .expiration(expiryDate)            // ✅ Modern: expiration() instead of setExpiration()
-                .signWith(getSigningKey())         // ✅ Modern: signWith(Key) - algorithm auto-detected
+                .claim("userId", userId)
+                .claim("type", "ACCESS")           //Token type
+                .subject(email)                    //  Modern: subject() instead of setSubject()
+                .issuedAt(new Date())              //  Modern: issuedAt() instead of setIssuedAt()
+                .expiration(new Date(System.currentTimeMillis() + expiration))            //  Modern: expiration() instead of setExpiration()
+                .signWith(getSigningKey())         //  Modern: signWith(Key) - algorithm auto-detected
+                .compact();
+    }
+
+    /**
+     * Generate REFRESH TOKEN (long-lived)
+     * Note: This is just the JWT. You still need to store it in DB!
+     */
+    public String generateRefreshToken(String userId, String email){
+        
+        return Jwts.builder()
+                .subject(email)
+                .claim("userId", userId)
+                .claim("type", "REFRESH")  //Token type
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -81,12 +78,19 @@ public class JwtUtil {
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
-
+   
     /**
      * Extract user ID from token
      */
     public String extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("userId", String.class));
+    }
+
+    /**
+     * Extract token type (ACCESS or REFRESH)
+     */
+    public String extractTokenType(String token) {
+        return extractClaim(token, claims -> claims.get("type", String.class));
     }
 
     /**
@@ -138,9 +142,32 @@ public class JwtUtil {
     }
 
     /**
-     * Get expiration time in seconds
+     * Check if token is an access token
      */
-    public Long getExpirationInSeconds() {
+    public Boolean isAccessToken(String token) {
+        return "ACCESS".equals(extractTokenType(token));
+    }
+
+    /**
+     * Check if token is a refresh token
+     */
+    public Boolean isRefreshToken(String token) {
+        return "REFRESH".equals(extractTokenType(token));
+    }
+
+    /**
+     * Get access token expiration in seconds
+     */
+    public Long getAccessTokenExpirationInSeconds() {
         return expiration / 1000;
     }
+
+    /**
+     * Get refresh token expiration in seconds
+     */
+    public Long getRefreshTokenExpirationInSeconds() {
+        return refreshTokenExpiration / 1000;
+    }
+
+    //STILL THE REFRESH TOKEN IS NOT FULLY IMPEMENTED
 }

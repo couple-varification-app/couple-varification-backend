@@ -5,10 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -26,20 +24,19 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
-        this.jwtUtil = jwtUtil;
+    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+        this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
 
     @Override
     protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+             HttpServletRequest request,
+             HttpServletResponse response,
+             FilterChain filterChain) throws ServletException, IOException {
 
         // 1. Get Authorization header
         final String authHeader = request.getHeader("Authorization");
@@ -51,31 +48,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+//        if (request.getServletPath().contains("swagger") ||
+//                request.getServletPath().contains("v3/api-docs")) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+
         try {
-            // ========================================
-            // 🔧 FIX: PROPERLY EXTRACT TOKEN
-            // ========================================
-            // Extract token after "Bearer " and TRIM whitespace
+
             final String jwt = authHeader.substring(7).trim();  // 🆕 Added .trim()
             
             log.debug("Extracted JWT token: {}", jwt.substring(0, Math.min(20, jwt.length())) + "...");
 
             // 3. Extract username from token
-            final String userEmail = jwtUtil.extractUsername(jwt);
+            final String userEmail = jwtService.extractUsername(jwt);
 
             log.debug("Extracted email from token: {}", userEmail);
 
             // 4. Check if user is not already authenticated
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
-                // 5. Load user details
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
+                // loadUserByUsername returns CustomUserDetails wrapping your real User
+                CustomUserDetails userDetails =
+                        (CustomUserDetails) userDetailsService.loadUserByUsername(userEmail);
+                        
                 log.debug("Loaded user details for: {}", userEmail);
                 log.debug("User authorities: {}", userDetails.getAuthorities());
 
                 // 6. Validate token
-                if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
+                if (jwtService.validateToken(jwt, userDetails.getUsername())) {
                     
                     // 7. Create authentication token
                     UsernamePasswordAuthenticationToken authToken = 
@@ -100,8 +101,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
+            // Log but don't throw — Spring Security will reject the request if unauthenticated
             log.error("Cannot set user authentication: {}", e.getMessage());
-            // Don't throw exception - let request continue to be rejected by security
+            
         }
 
         // 10. Continue filter chain

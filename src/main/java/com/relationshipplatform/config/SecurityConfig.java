@@ -9,11 +9,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Updated Security Configuration with Role-Based Authorization
@@ -30,13 +30,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity  // 🆕 Enables @PreAuthorize, @Secured, etc.
 public class SecurityConfig {
 
+    private final CorsConfigurationSource corsConfigurationSource;
     private final JwtAuthenticationFilter jwtAuthFilter;
-    private final UserDetailsService userDetailsService;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, 
-                          UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, CorsConfigurationSource corsConfigurationSource) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.userDetailsService = userDetailsService;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     /**
@@ -48,21 +47,30 @@ public class SecurityConfig {
         http
             // Disable CSRF (not needed for JWT)
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             
             // Configure authorization
             .authorizeHttpRequests(auth -> auth
+                
                 // ========================================
-                // PUBLIC ENDPOINTS (No authentication)
+                // 🔓 PUBLIC ENDPOINTS
                 // ========================================
                 .requestMatchers(
-                    "/api/auth/register",
-                    "/api/auth/login",
-                    "/api/auth/refresh",
-                    "/api/verification/**",  // Public verification
-                    "/error",
-                    "/actuator/health",      // Health check
-                    "/swagger-ui/**",        // Swagger UI
-                    "/v3/api-docs/**"        // OpenAPI docs
+                    // Auth endpoints
+                    "/api/auth/**",
+                    
+                    // ✅ SWAGGER - ALL PATTERNS (This was missing!)
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs",
+                    "/swagger-resources/**",
+                    "/webjars/**",
+                    
+                    // Health check
+                    "/actuator/health",
+                    "/actuator/health/db",
+                    "/error"
                 ).permitAll()
                 
                 // ========================================
@@ -89,6 +97,7 @@ public class SecurityConfig {
                 ).hasAnyRole("USER", "ADMIN", "MODERATOR")  // 🆕 Requires any role
                 
                 // All other endpoints require authentication
+                .requestMatchers("/api/auth/me").authenticated()
                 .anyRequest().authenticated()
             )
             
@@ -96,9 +105,26 @@ public class SecurityConfig {
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+//
+//                // Add these to your securityFilterChain(HttpSecurity http)
+//                .exceptionHandling(exceptions -> exceptions
+//                        .authenticationEntryPoint((request, response, authException) -> {
+//                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                            response.setContentType("application/json");
+//                            response.getWriter().write(
+//                                    "{\"success\":false,\"message\":\"Unauthorized: Token is missing or invalid\",\"errorCode\":\"UNAUTHORIZED\"}"
+//                            );
+//                        })
+//                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+//                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+//                            response.setContentType("application/json");
+//                            response.getWriter().write(
+//                                    "{\"success\":false,\"message\":\"Forbidden: You do not have the required role\",\"errorCode\":\"FORBIDDEN\"}"
+//                            );
+//                        })
+//                )
             
             // Add JWT filter before username/password authentication
-            
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -122,14 +148,13 @@ public class SecurityConfig {
     }
 
     /**
-     * Authentication provider
+     * Authentication provider   : No need to Write explicitly spring security implemented it automatically
      */
-    // @Bean
-    // public AuthenticationProvider authenticationProvider() {
-    //     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-    //     authProvider.setUserDetailsService(userDetailsService);
-    //     authProvider.setPasswordEncoder(passwordEncoder());
-    //     return authProvider;
-    // }
+//     @Bean
+//     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+//         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+//         authProvider.setPasswordEncoder(passwordEncoder());
+//         return authProvider;
+//     }
 
 }

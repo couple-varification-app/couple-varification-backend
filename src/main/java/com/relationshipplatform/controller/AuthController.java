@@ -4,11 +4,19 @@ import com.relationshipplatform.dto.request.login.UserLoginRequest;
 import com.relationshipplatform.dto.request.user.UserRegistrationRequest;
 import com.relationshipplatform.dto.response.api.ApiResponse;
 import com.relationshipplatform.dto.response.auth.AuthResponse;
+import com.relationshipplatform.dto.response.user.UserResponse;
+import com.relationshipplatform.entity.User;
+import com.relationshipplatform.exception.AuthenticationException;
+import com.relationshipplatform.mapper.UserMapper;
+import com.relationshipplatform.security.CustomUserDetails;
 import com.relationshipplatform.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -21,15 +29,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserMapper userMapper;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserMapper userMapper) {
         this.authService = authService;
+        this.userMapper = userMapper;
     }
 
     /**
      * Register a new user
      * POST /api/auth/register
-     * 
      * Request Body:
      * {
      *   "name": "John Doe",
@@ -37,7 +46,7 @@ public class AuthController {
      *   "password": "SecurePass@123",
      *   "dob": "1995-05-15"
      * }
-     * 
+     *
      * Response: AuthResponse with JWT token
      */
     @PostMapping("/register")
@@ -58,13 +67,13 @@ public class AuthController {
     /**
      * Login user
      * POST /api/auth/login
-     * 
+     *
      * Request Body:
      * {
      *   "email": "john@example.com",
      *   "password": "SecurePass@123"
      * }
-     * 
+     *
      * Response: AuthResponse with JWT token and relationship status
      */
     @PostMapping("/login")
@@ -131,7 +140,7 @@ public class AuthController {
      * Validate JWT token
      * GET /api/auth/validate
      * Header: Authorization: Bearer {token}
-     * 
+     *
      * Response: Boolean indicating token validity
      */
     @GetMapping("/validate")
@@ -155,8 +164,34 @@ public class AuthController {
      * Get current user from token
      * GET /api/auth/me
      * Header: Authorization: Bearer {token}
-     * 
+     *
      * Response: User information
      */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
+
+        log.info("GET /api/auth/me - Get current user");
+
+        // ✅ Get authenticated user from SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AuthenticationException("User is not authenticated");
+        }
+
+        // Extract user details
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userDetails.getUser();
+
+        // Return full user response instead of just userId
+        UserResponse userResponse = userMapper.toResponse(user);
+
+        ApiResponse<UserResponse> response = ApiResponse.success(
+                userResponse,
+                "User retrieved successfully"
+        );
+
+        return ResponseEntity.ok(response);
+    }
     
 }

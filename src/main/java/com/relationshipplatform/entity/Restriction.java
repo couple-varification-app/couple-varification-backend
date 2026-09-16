@@ -1,5 +1,8 @@
 package com.relationshipplatform.entity;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,4 +32,16 @@ public class Restriction {
     private boolean user1Approved;
 
     private boolean user2Approved;
+
+    private LocalDate startDate;
+
+    private String category;
+
+    private String status;
+
+    private LocalDate endDate;
+
+    private String severity;
+    
+    private LocalDateTime createdAt;
 }

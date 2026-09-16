@@ -10,7 +10,8 @@ import com.relationshipplatform.exception.*;
 import com.relationshipplatform.mapper.UserMapper;
 import com.relationshipplatform.repository.CoupleRepository;
 import com.relationshipplatform.repository.UserRepository;
-import com.relationshipplatform.security.JwtUtil;
+import com.relationshipplatform.security.CustomUserDetails;
+import com.relationshipplatform.security.JwtService;
 import com.relationshipplatform.service.AuthService;
 import com.relationshipplatform.utility.AgeCalculator;
 import com.relationshipplatform.utility.IdGenerator;
@@ -23,7 +24,9 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 
-
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,18 +41,21 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final CoupleRepository coupleRepository;
+    private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
     private final PasswordEncoderUtil passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtUtil;
 
     public AuthServiceImpl(UserRepository userRepository,
                            CoupleRepository coupleRepository,
                            UserMapper userMapper,
+                           AuthenticationManager authenticationManager,
                            PasswordEncoderUtil passwordEncoder,
-                           JwtUtil jwtUtil) {
+                           JwtService jwtUtil) {
         this.userRepository = userRepository;
         this.coupleRepository = coupleRepository;
         this.userMapper = userMapper;
+        this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
@@ -88,11 +94,6 @@ public class AuthServiceImpl implements AuthService {
         // 6. Generate JWT token
         String token = jwtUtil.generateToken(savedUser.getUserId(), savedUser.getEmail());
 
-        // 7. Calculate token expiration (I think here no need to write this)
-        Date issuedAt = jwtUtil.extractIssuedAt(token);
-        Date expiresAt = jwtUtil.extractExpiration(token);
-        Long expiresIn = jwtUtil.getExpirationInSeconds();
-
         // New user has no relationship
         RelationshipStatusInfo relationshipStatus = RelationshipStatusInfo.builder()
                 .hasActiveCouple(false)
@@ -108,52 +109,54 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .tokenType("Bearer")
                 .issuedAt(LocalDateTime.now())
-                .expiresIn(jwtUtil.getExpirationInSeconds())
+                .relationshipStatus(relationshipStatus)
+                .expiresIn(jwtUtil.getAccessTokenExpirationInSeconds())
                 .user(userMapper.toResponse(savedUser))
                 .message("Registration successful")
                 .firstLogin(true)
                 .build();
     }
 
+    /** Here we have added fully spring security implementation using 
+     * userDetailsService and authenticationManager
+    */
+   
     @Override
     public AuthResponse login(UserLoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
+        // 1. Spring Security handles everything:
+    //    - Calls CustomUserDetailsService.loadUserByUsername()
+    //    - Verifies BCrypt password via DaoAuthenticationProvider
+    //    - Calls CustomUserDetails.isEnabled() → throws DisabledException if inactive
+    //    - Throws BadCredentialsException for wrong password
+    Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(
+                    request.getEmail(),
+                    request.getPassword() 
+            )
+    );
 
-        // 1. Find user by email
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        
-                        new AuthenticationException("Invalid email or password")
-                );
+    // 2. Principal is your CustomUserDetails — cast to get the real User entity
+    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    User user = userDetails.getUser();
 
-        // 2. Check if account is active
-        if (!user.isActive()) {
-            log.warn("Login attempt for inactive account: {}", request.getEmail());
-            throw new AuthenticationException("Account is deactivated");
-        }
+    // 3. Generate JWT
+    String token = jwtUtil.generateToken(user.getUserId(), user.getEmail());
 
-        // 3. Verify password
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            log.warn("Login failed: Invalid password for email: {}", request.getEmail());
-            throw new AuthenticationException("Invalid email or password");
-        }
+    // 4. Your custom business logic
+    RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
 
-        // 4. Generate JWT token
-        String token = jwtUtil.generateToken(user.getUserId(),user.getEmail());
+    log.info("User logged in successfully: {}", user.getUserId());
 
-        //5. Get relationship status
-        RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
-
-        log.info("User logged in successfully: {}", user.getUserId());
-
-        return AuthResponse.builder()
-                .token(token)
-                .tokenType("Bearer")
-                .expiresIn(jwtUtil.getExpirationInSeconds())
-                .user(userMapper.toResponse(user))
-                .message("Login successful")
-                .firstLogin(false)
-                .build();
+    return AuthResponse.builder()
+            .token(token)
+            .tokenType("Bearer")
+            .expiresIn(jwtUtil.getAccessTokenExpirationInSeconds())
+            .user(userMapper.toResponse(user))
+            .relationshipStatus(relationshipStatus)
+            .message("Login successful")
+            .firstLogin(false)
+            .build();
     }
 
         @Override
@@ -168,7 +171,9 @@ public class AuthServiceImpl implements AuthService {
     public boolean validateToken(String token) {
         try {
             String email = jwtUtil.extractUsername(token);
+
             return jwtUtil.validateToken(token, email);
+
         } catch (Exception e) {
             log.warn("Token validation failed: {}", e.getMessage());
             return false;
@@ -243,131 +248,7 @@ public class AuthServiceImpl implements AuthService {
 
     
 
-    // ==================== Below code is only for reference ====================
-
-
-    // @Override
-    // @Transactional
-    // public AuthResponse register(UserRegistrationRequest request) {
-    //     log.info("Registering new user with email: {}", request.getEmail());
-
-    //     // 1. Validate age (18+)
-    //     int age = AgeCalculator.calculateAge(request.getDob());
-    //     if (!AgeCalculator.isEligibleAge(request.getDob())) {
-    //         log.warn("Age verification failed for user. Age: {}", age);
-    //         throw new AgeVerificationException(age);
-    //     }
-
-    //     // 2. Check for duplicate email
-    //     if (userRepository.existsByEmail(request.getEmail())) {
-    //         log.warn("Duplicate email registration attempt: {}", request.getEmail());
-    //         throw new DuplicateResourceException("User", "email", request.getEmail());
-    //     }
-
-    //     // 3. Generate unique User ID
-    //     String userId = IdGenerator.generateUserId();
-    //     while (userRepository.existsByUserId(userId)) {
-    //         userId = IdGenerator.generateUserId();
-    //     }
-
-    //     // 4. Create user entity
-    //     User user = new User();
-    //     user.setUserId(userId);
-    //     user.setName(request.getName());
-    //     user.setEmail(request.getEmail());
-    //     user.setPassword(passwordEncoder.encode(request.getPassword()));
-    //     user.setDob(request.getDob());
-    //     user.setAge(age);
-    //     user.setVerified(false);
-    //     user.setActive(true);
-
-    //     // 5. Save user
-    //     User savedUser = userRepository.save(user);
-    //     log.info("User registered successfully with ID: {}", savedUser.getUserId());
-
-    //     // 6. Generate JWT token
-    //     String token = jwtUtil.generateToken(savedUser.getUserId(), savedUser.getEmail());
-        
-    //     // 7. Calculate token expiration
-    //     Date issuedAt = jwtUtil.extractIssuedAt(token);
-    //     Date expiresAt = jwtUtil.extractExpiration(token);
-    //     Long expiresIn = jwtUtil.getExpirationInSeconds();
-
-    //     // 8. Build response
-    //     UserResponse userResponse = userMapper.toResponse(savedUser);
-        
-    //     // New user has no relationship
-    //     RelationshipStatusInfo relationshipStatus = RelationshipStatusInfo.builder()
-    //             .hasActiveCouple(false)
-    //             .coupleId(null)
-    //             .partnerName(null)
-    //             .relationshipHealth(null)
-    //             .hasPendingCoupleRequest(false)
-    //             .pendingRequestFrom(null)
-    //             .build();
-
-    //     return AuthResponse.builder()
-    //             .token(token)
-    //             .tokenType("Bearer")
-    //             .expiresIn(expiresIn)
-    //             .issuedAt(toLocalDateTime(issuedAt))
-    //             .expiresAt(toLocalDateTime(expiresAt))
-    //             .user(userResponse)
-    //             .message("Registration successful")
-    //             .firstLogin(true)
-    //             .build();
-    // }
-
-    // @Override
-    // public AuthResponse login(UserLoginRequest request) {
-    //     log.info("Login attempt for email: {}", request.getEmail());
-
-    //     // 1. Find user by email
-    //     User user = userRepository.findByEmail(request.getEmail())
-    //             .orElseThrow(() -> {
-    //                 log.warn("Login failed: User not found with email: {}", request.getEmail());
-    //                 return new AuthenticationException("Invalid email or password");
-    //             });
-
-    //     // 2. Check if account is active
-    //     if (!user.isActive()) {
-    //         log.warn("Login attempt for inactive account: {}", request.getEmail());
-    //         throw new AuthenticationException("Account is deactivated. Please contact support.");
-    //     }
-
-    //     // 3. Verify password
-    //     if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-    //         log.warn("Login failed: Invalid password for email: {}", request.getEmail());
-    //         throw new AuthenticationException("Invalid email or password");
-    //     }
-
-    //     // 4. Generate JWT token
-    //     String token = jwtUtil.generateToken(user.getUserId(),user.getEmail());
-        
-    //     // 5. Calculate token expiration
-    //     Date issuedAt = jwtUtil.extractIssuedAt(token);
-    //     Date expiresAt = jwtUtil.extractExpiration(token);
-    //     Long expiresIn = jwtUtil.getExpirationInSeconds();
-
-    //     // 6. Get relationship status
-    //     RelationshipStatusInfo relationshipStatus = buildRelationshipStatus(user);
-
-    //     // 7. Build response
-    //     UserResponse userResponse = userMapper.toResponse(user);
-
-    //     log.info("User logged in successfully: {}", user.getUserId());
-
-    //     return AuthResponse.builder()
-    //             .token(token)
-    //             .tokenType("Bearer")
-    //             .expiresIn(expiresIn)
-    //             .issuedAt(toLocalDateTime(issuedAt))
-    //             .expiresAt(toLocalDateTime(expiresAt))
-    //             .user(userResponse)
-    //             .message("Login successful")
-    //             .firstLogin(false)
-    //             .build();
-    // }
+    // ==================== Below code will be using to implement the refresh token ====================
 
 
     // @Override
@@ -381,7 +262,7 @@ public class AuthServiceImpl implements AuthService {
 
     //         // 2. Validate old token is not expired (can refresh before expiry)
     //         if (jwtUtil.isTokenExpired(oldToken)) {
-    //             throw new AuthenticationException("Token has expired. Please login again.");
+    //             throw new AuthenticationException("Token has expired. Please log in again.");
     //         }
 
     //         // 3. Find user
